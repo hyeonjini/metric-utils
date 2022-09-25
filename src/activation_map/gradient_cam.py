@@ -1,3 +1,4 @@
+from typing import Optional
 import torch
 import numpy as np
 import matplotlib.cm as cm
@@ -14,7 +15,7 @@ class GradientCAM():
         target_layer: str = None,
         topk: int = 3,
         cnn_model: torch.nn.Module = None,
-        transform: torch.uitls.transform = None,
+        transform: Optional[None] = None,
         paper_cmap: bool =True
     ):
         self.target_image = target_image
