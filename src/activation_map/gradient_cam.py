@@ -38,32 +38,36 @@ class GradientCAM():
         # generate grad-cam
         self.cnn_model.to(self.device).eval()
 
-        with torch.no_grad():
-            image = torch.tensor(image).to(self.device)
-            image = image.unsqueeze(0)
-            probs, ids = self.forward(image)
-            print(probs, ids)
-            print(f"Generate Grad-CAM {self.target_layer}")
+        # with torch.no_grad():
+            
+        image = torch.tensor(image).to(self.device)
+        image = image.unsqueeze(0)
+        probs, ids = self.forward(image)
+        # print(probs, ids)
+        print(f"Generate Grad-CAM {self.target_layer}")
 
-            for i in range(self.topk):
-                self.backward(ids=ids[:, [i]])
-                regions = self.generate(target_layer=self.target_layer)
-                gcam = regions[0, 0]
+        for i in range(self.topk):
+            self.backward(ids=ids[:, [i]])
+            regions = self.generate(target_layer=self.target_layer)
+            topk = ids[:, [i]]
+            gcam = regions[0, 0]
                 
-                if self.device == 'cuda':
-                    gcam = gcam.cpu().numpy()
-                else:
-                    gcam = gcam.numpy()
+            if self.device == 'cuda':
+                gcam = gcam.cpu().numpy()
+                topk = topk.cpu().numpy()[0]
+            else:
+                gcam = gcam.numpy()
+                topk = topk.numpy()[0]
                 
-                cmap = cm.jet_r(gcam)[..., :3] * 255.0
-                cmap = cmap[..., ::-1].copy()
-                if self.paper_cmap:
-                    alpha = gcam[..., None]
-                    gcam = alpha * cmap + (1 - alpha) * org_image
-                else:
-                    gcam = (cmap.astype(np.float) + org_image.astype(np.float))
-
-                gcam_list.append([np.uint8(gcam)])
+            cmap = cm.jet_r(gcam)[..., :3] * 255.0
+            cmap = cmap[..., ::-1].copy()
+            if self.paper_cmap:
+                alpha = gcam[..., None]
+                gcam = alpha * cmap + (1 - alpha) * org_image
+            else:
+                gcam = (cmap.astype(np.float) + org_image.astype(np.float)) / 2
+            
+            gcam_list.append([np.uint8(gcam), topk])
 
         self.remove_hook()
 
@@ -84,9 +88,10 @@ class GradientCAM():
                 
             return backward_hook
         
-        for name, module in self.model.named_modules():
+        for name, module in self.cnn_model.named_modules():
 
             if self.target_layer is None or name == self.target_layer:
+                print(self.target_layer, "registered in hook")
                 self.handlers.append(module.register_forward_hook(save_fmaps(name)))
                 self.handlers.append(module.register_backward_hook(save_grads(name)))
 
@@ -97,14 +102,14 @@ class GradientCAM():
             raise ValueError(f"There is no name in pool: {target_layer}")
     
     def forward(self, image):
-        self.image_shape = image.shape[2:]
+        self.image_shape = self.target_image.shape[:2]
         self.logits = self.cnn_model(image)
         self.probs = torch.nn.functional.softmax(self.logits, dim=1)
         return self.probs.sort(dim=1, descending=True)
 
     def backward(self, ids):
         one_hot = self._encode_one_hot(ids)
-        self.model.zero_grad()
+        self.cnn_model.zero_grad()
         self.logits.backward(gradient=one_hot, retain_graph=True)
 
     def _encode_one_hot(self, ids):
@@ -119,8 +124,8 @@ class GradientCAM():
         
         gcam = torch.mul(fmaps, weights).sum(dim=1, keepdim=True)
 
-        gcam = torch.functional.relu(gcam)
-        gcam = torch.functional.interpolate(
+        gcam = torch.nn.functional.relu(gcam)
+        gcam = torch.nn.functional.interpolate(
             gcam, self.image_shape, mode="bilinear", align_corners=False
         )
 
