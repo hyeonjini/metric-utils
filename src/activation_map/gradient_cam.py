@@ -2,6 +2,7 @@ from typing import Optional
 import torch
 import numpy as np
 import matplotlib.cm as cm
+from torchvision.transforms import Resize, Compose, ToTensor, Normalize
 
 class GradientCAM():
 
@@ -11,28 +12,35 @@ class GradientCAM():
     
     def __init__(
         self,
-        target_image = None,
         target_layer: str = None,
         topk: int = 3,
         cnn_model: torch.nn.Module = None,
         transform: Optional[None] = None,
         paper_cmap: bool =True
     ):
-        self.target_image = target_image
         self.target_layer = target_layer
         self.topk = topk
         self.cnn_model = cnn_model
+
+        if transform == None:
+            transform = Compose([
+                ToTensor(),
+                Resize(256),
+                Normalize([0.485, 0.456, 0.406],[0.229, 0.224, 0.225])
+            ])
+
         self.transform = transform
+        
         self.paper_cmap = paper_cmap
 
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
         self.register_hook()
     
-    def __call__(self):
-        
+    def __call__(self, image):
+        self.target_image = image
         gcam_list = []
-        org_image = self.target_image
+        org_image = image
         image = self.transform(org_image)
 
         # generate grad-cam

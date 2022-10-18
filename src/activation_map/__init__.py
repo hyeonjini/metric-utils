@@ -1,4 +1,4 @@
-from src.activation_map.gradient_cam import GradientCAM
+from .gradient_cam import GradientCAM
 
 
 __all__ = [
