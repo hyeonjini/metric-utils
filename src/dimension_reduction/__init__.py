@@ -1,14 +1,8 @@
-from .pca import PCA
-from .tsne import tSNE
-
-__all__ = [
-    "PCA",
-    "tSNE",
-]
-
 from typing import Optional, List, Dict, Any
 from torch.nn import Module
-from utils import read_image
+from src.utils import read_image
+
+from tqdm import tqdm
 
 
 class DimensionReduction:
@@ -54,7 +48,8 @@ class DimensionReduction:
         for image, label in zip(self.images, self.labels):
             image = read_image(image)
             image = self.transform(image)
-            self.features.append(self.feature_extractor(image))
+            feature = self.feature_extractor(image.unsqueeze(0))
+            self.features.extend(feature.detach().numpy())
 
     def train_model(self):
         pass
