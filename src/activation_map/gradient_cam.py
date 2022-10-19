@@ -4,6 +4,7 @@ import numpy as np
 import matplotlib.cm as cm
 from torchvision.transforms import Resize, Compose, ToTensor, Normalize
 
+
 class GradientCAM():
 
     fmap_pool = {}
