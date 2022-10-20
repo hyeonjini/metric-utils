@@ -39,7 +39,7 @@ class DimensionReduction:
         self.model = None  # tSNE or PCA model
         self.features = None
 
-    def feature_extraction(self):
+    def feature_extraction_from_path(self):
         """method for feature extraction."""
         self.features = []
 
@@ -47,9 +47,18 @@ class DimensionReduction:
 
         for image, label in zip(self.images, self.labels):
             image = read_image(image)
+
             image = self.transform(image)
             feature = self.feature_extractor(image.unsqueeze(0))
             self.features.extend(feature.detach().numpy())
+
+    def feature_extraction_from_loader(self):
+        self.features = []
+        self.feature_extractor.eval()
+
+        for image, label in zip(self.images, self.labels):
+            feature = self.feature_extractor(image)
+            self.features.extend(feature.cpu().numpy())
 
     def train_model(self):
         pass

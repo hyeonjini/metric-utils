@@ -1,9 +1,6 @@
 from src.dimension_reduction import DimensionReduction
 from src.utils import scale_to_01_range
 
-from typing import Optional, List, Dict, Any
-from torch.nn import Module
-
 import random
 import matplotlib.pyplot as plt
 import numpy as np
@@ -15,8 +12,12 @@ class tSNE(DimensionReduction):
     def __init__(self, **kwargs) -> None:
         super(tSNE, self).__init__(**kwargs)
 
-    def train_model(self, n_components: int = 2):
-        self.feature_extraction()
+    def train_model(self, n_components: int = 2, _from: str = "path"):
+        if _from == "path":
+            self.feature_extraction_from_path()
+        else:
+            self.feature_extraction_from_loader()
+
         self.model = TSNE(n_components=n_components).fit_transform(self.features)
 
     def visualize_tsne_with_point(self, figsize=(12, 8)):
