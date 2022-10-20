@@ -12,11 +12,7 @@ class tSNE(DimensionReduction):
     def __init__(self, **kwargs) -> None:
         super(tSNE, self).__init__(**kwargs)
 
-    def train_model(self, n_components: int = 2, _from: str = "path"):
-        if _from == "path":
-            self.feature_extraction_from_path()
-        else:
-            self.feature_extraction_from_loader()
+    def train_model(self, n_components: int=2):
 
         self.model = TSNE(n_components=n_components).fit_transform(self.features)
 
@@ -83,5 +79,5 @@ class tSNE(DimensionReduction):
         ax.legend(loc="best")
         plt.show()
 
-    def save_graph(self, save_pth: str):
+    def save_plot(self, save_pth: str):
         pass
