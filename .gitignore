@@ -9,7 +9,7 @@
 example.ipynb
 .ipynb_checkpoints
 */.ipynb_checkpoints/*
-
+*.pt
 # IPython
 profile_default/
 ipython_config.py
